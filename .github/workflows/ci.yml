@@ -7,20 +7,23 @@ on:
     branches: [main]
 
 jobs:
-  install:
+  validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
-      - name: Install dependencies
-        run: npm install   # BUG 1 — should be npm ci
 
-  test:
-    runs-on: ubuntu-latest
-    # BUG 2 — missing needs: install, so test runs in parallel with install
-    # BUG 3 — no checkout or npm ci step, so node_modules is empty on this fresh machine
-    steps:
-      - name: Run tests
+      - name: Install dependencies (locked)
+        # Changed from npm install to npm ci for reproducible installs
+        # npm ci reads package-lock.json exactly and fails if it is out of sync
+        run: npm ci
+
+      - name: Run unit tests
+        # Combined into one job — each GitHub Actions job runs on a fresh machine
+        # so node_modules from a separate install job would not be available here
         run: npm test
